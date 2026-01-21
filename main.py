@@ -94,12 +94,12 @@ def download_orbit_files(features, orbit_type):
 def main():
 
     orbit_number = 160  # 160 Ascending, 167 Descending
-    aoi = shape_to_wkt("./aoi/aoi.shp")
     
     from_date = "2025-12-21"
     to_date = "2026-01-21" 
     # to_date = date.today()
 
+    aoi = shape_to_wkt("./aoi/aoi.shp")
     
     ## Query and download Sentinel-1 orbit files
     #
