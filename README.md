@@ -15,3 +15,7 @@ mamba env remove -n <env_name>
 ## list mamba virtual environments
 
 mamba env list
+
+## install cdsetool
+
+mamba install cdsetool==0.2.13
