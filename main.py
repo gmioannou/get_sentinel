@@ -76,7 +76,7 @@ def query_orbit_files(from_date, to_date, orbit_type):
     return orbit_files
 
 def download_orbit_files(features, orbit_type):
-    out_folder = os.path.join(os.path.curdir, "./orbit_files/" + orbit_type)
+    out_folder = os.path.join(os.path.curdir, "./orbits/" + orbit_type)
     os.makedirs(out_folder, exist_ok=True)
 
     list(
@@ -93,7 +93,7 @@ def download_orbit_files(features, orbit_type):
     
 def main():
 
-    orbit_number = 160  # 160 Ascending, 167 Descending
+    orbit_number = 167  # 160 Ascending, 167 Descending
     aoi = shape_to_wkt("./aoi/aoi.shp")
     
     from_date = "2025-12-21"
