@@ -1,0 +1,6 @@
+Install these recommended packages:
+mamba install scipy matplotlib numpy pandas pyserial pillow oct2py pytz colorspacious shapely
+mamba install seaborn cmocean colorcet
+
+
+run_all dates 'read_S1_TOPS_SLC.py $1.zipfile_list --burst_sel 20231110.burst_number_table --pol vv --OPOD_dir ../input_files_orig/OPOD'
