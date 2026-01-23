@@ -9,6 +9,7 @@ from datetime import date
 
 def query_products(from_date, to_date, orbit_direction, aoi):
     
+    # Query Sentinel-1 SLC products for given orbit direction and AOI
     products = query_features(
         "Sentinel1",
         {
@@ -29,14 +30,8 @@ def query_products(from_date, to_date, orbit_direction, aoi):
     return products_list
         
 def download_products(products, orbit_direction):
-
-    print(f"Downloading {orbit_direction} products ({len(products)}):")
     
-    for product in products:
-        print(product['properties']['title'], product['properties']['orbitNumber'], product['properties']['relativeOrbitNumber'], product['properties']['orbitDirection'])
-
-    print("")
-    
+    # Download products to local folder "./products/ASCENDING" or "./products/DESCENDING"
     out_folder = os.path.join(os.path.curdir, "./products/" + orbit_direction)    
     os.makedirs(out_folder, exist_ok=True)
     
@@ -67,13 +62,8 @@ def query_orbit_files(from_date, to_date, orbit_type):
     return orbit_files
 
 def download_orbit_files(orbit_files, orbit_type):
-    print(f"Downloading {orbit_type} orbit files ({len(orbit_files)}):")
     
-    for orbit_file in orbit_files:
-        print(orbit_file['properties']['title'], orbit_file['properties']['orbitNumber'], orbit_file['properties']['relativeOrbitNumber'], orbit_file['properties']['orbitDirection'])
-
-    print("")
-    
+    # Download orbit files to local folder "./orbits/POEORB" or "./orbits/RESORB"
     out_folder = os.path.join(os.path.curdir, "./orbits/" + orbit_type)
     os.makedirs(out_folder, exist_ok=True)
 
@@ -107,7 +97,6 @@ def main():
     download_orbit_files(orbit_files, "POEORB")
     
     ## Query and download Sentinel-1 products
-    #
     
     for orbit_direction in ["ASCENDING", "DESCENDING"]:
         products = query_products(from_date, to_date, orbit_direction, aoi)
