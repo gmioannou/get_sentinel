@@ -1,61 +1,52 @@
 
 import os.path
-from cdsetool.query import query_features, shape_to_wkt
-from cdsetool.credentials import Credentials
+import json
+from cdsetool.query import query_features
 from cdsetool.download import download_features
 from cdsetool.monitor import StatusMonitor
+from shapely.geometry import shape
 from datetime import date
 
-def out_folder(orbit_number):
-    current_dir = os.path.curdir
-    if orbit_number == 160:
-        out_dir = os.path.join(current_dir, "Ascending")
-    elif orbit_number == 167:
-        out_dir = os.path.join(current_dir, "Descending")
-
-    return(out_dir)
+def query_products(from_date, to_date, orbit_direction, aoi):
     
-
-
-def query_products(from_date, to_date, orbit_number, aoi):
-    features = query_features(
+    products = query_features(
         "Sentinel1",
         {
             "platform": "S1A",
             "productType": "SLC",
             "sensorMode": "IW",
             "processingLevel": "LEVEL1",
-            "relativeOrbitNumber": orbit_number,
+            "orbitDirection": orbit_direction,
             "startDate": from_date,
             "completionDate": to_date,
             "geometry": aoi,
         },
     )
 
-    features_list = list(features)
-    features_list.sort(key=lambda f: f['properties'].get('startDate', ''))
-    
-    for f in features_list:
-        print(f['properties']['title'])
-
-    return features_list
-
-def download_products(features, orbit_number):
-    if orbit_number == 160:
-        out_folder = os.path.join(os.path.curdir, "./products/ASC")
-    elif orbit_number == 167:
-        out_folder = os.path.join(os.path.curdir, "./products/DESC")
+    products_list = list(products)
+    products_list.sort(key=lambda f: f['properties'].get('startDate', ''))
+            
+    return products_list
         
+def download_products(products, orbit_direction):
+
+    print(f"Downloading {orbit_direction} products ({len(products)}):")
+    
+    for product in products:
+        print(product['properties']['title'], product['properties']['orbitNumber'], product['properties']['relativeOrbitNumber'], product['properties']['orbitDirection'])
+
+    print("")
+    
+    out_folder = os.path.join(os.path.curdir, "./products/" + orbit_direction)    
     os.makedirs(out_folder, exist_ok=True)
     
     list(
         download_features(
-            features,
+            products,
             out_folder,
             {
-                "concurrency": 3,
+                "concurrency": 4,
                 "monitor": StatusMonitor(),
-                "credentials": Credentials(),
             },
         )
     )
@@ -75,51 +66,52 @@ def query_orbit_files(from_date, to_date, orbit_type):
 
     return orbit_files
 
-def download_orbit_files(features, orbit_type):
+def download_orbit_files(orbit_files, orbit_type):
+    print(f"Downloading {orbit_type} orbit files ({len(orbit_files)}):")
+    
+    for orbit_file in orbit_files:
+        print(orbit_file['properties']['title'], orbit_file['properties']['orbitNumber'], orbit_file['properties']['relativeOrbitNumber'], orbit_file['properties']['orbitDirection'])
+
+    print("")
+    
     out_folder = os.path.join(os.path.curdir, "./orbits/" + orbit_type)
     os.makedirs(out_folder, exist_ok=True)
 
     list(
         download_features(
-            features,
+            orbit_files,
             out_folder,
             {
-                "concurrency": 3,
+                "concurrency": 4,
                 "monitor": StatusMonitor(),
-                "credentials": Credentials(),
             },
         )
     )
     
 def main():
-
-    orbit_number = 160  # 160 Ascending, 167 Descending
     
-    from_date = "2025-12-21"
-    to_date = "2026-01-21" 
+    from_date = "2026-01-01"
+    to_date = "2026-01-11" 
     # to_date = date.today()
 
-    aoi = shape_to_wkt("./aoi/aoi.shp")
-    
+    ## Load area of interest (AOI) from GeoJSON file
+    with open("./aoi.json") as f:
+        aoi_data = json.load(f)
+        
+    aoi = shape(aoi_data).wkt
+        
     ## Query and download Sentinel-1 orbit files
-    #
-    
-    # orbit_files = query_orbit_files(from_date, to_date, "RESORB")
-    # download_orbit_files(orbit_files, "RESORB")
+    # POEORB / RESORB
     
     orbit_files = query_orbit_files(from_date, to_date, "POEORB")    
     download_orbit_files(orbit_files, "POEORB")
     
-    print("Orbit files downloaded...")
-    
     ## Query and download Sentinel-1 products
     #
     
-    products = query_products(from_date, to_date, orbit_number, aoi)
-    download_products(products, orbit_number)
-    
-    print("Product files downloaded...")
-            
+    for orbit_direction in ["ASCENDING", "DESCENDING"]:
+        products = query_products(from_date, to_date, orbit_direction, aoi)
+        download_products(products, orbit_direction)
 
 if __name__ == "__main__":
     main()
