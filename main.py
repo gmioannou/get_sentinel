@@ -8,8 +8,23 @@ from shapely.geometry import shape
 from datetime import date
 
 def query_products(from_date, to_date, orbit_direction, aoi):
+    """
+    Query Sentinel-1 SLC products for a given orbit direction and AOI.
+
+    Args:
+        from_date (str): Start date for the query (YYYY-MM-DD).
+        to_date (str): End date for the query (YYYY-MM-DD).
+        orbit_direction (str): 'ASCENDING' or 'DESCENDING'.
+        aoi (dict or str): GeoJSON geometry or WKT string for the area of interest.
+
+    Returns:
+        list: List of product features sorted by start date.
+
+    Scope:
+        Use in workflows needing filtered Sentinel-1 SLC product lists for further processing or downloading. 
+        Only products matching the AOI and orbit direction within the date range are returned.
+    """
     
-    # Query Sentinel-1 SLC products for given orbit direction and AOI
     products = query_features(
         "Sentinel1",
         {
@@ -28,10 +43,27 @@ def query_products(from_date, to_date, orbit_direction, aoi):
     products_list.sort(key=lambda f: f['properties'].get('startDate', ''))
             
     return products_list
-        
+
 def download_products(products, orbit_direction):
+
+    """
+    Download Sentinel-1 products to a local folder based on orbit direction.
+
+    Args:
+        products (list): List of product features to download.
+        orbit_direction (str): 'ASCENDING' or 'DESCENDING'.
+
+    Returns:
+        None
+
+    Scope:
+        Saves products to './products/ASCENDING' or './products/DESCENDING' depending on orbit direction. 
+        Intended for use after querying products for batch downloading. 
+        Handles folder creation and concurrent downloads.
+    """
     
-    # Download products to local folder "./products/ASCENDING" or "./products/DESCENDING"
+    print(f"Downloading {orbit_direction} products ({len(products)})\n")
+    
     out_folder = os.path.join(os.path.curdir, "./products/" + orbit_direction)    
     os.makedirs(out_folder, exist_ok=True)
     
@@ -47,8 +79,22 @@ def download_products(products, orbit_direction):
     )
     
 def query_orbit_files(from_date, to_date, orbit_type):
+    """
+    Query Sentinel-1 AUX orbit files of type AUX_POEORB or AUX_RESORB.
 
-    # Query orbit AUX as Sentinel1 products of type AUX_POEORB / AUX_RESORB
+    Args:
+        from_date (str): Start date for the query (YYYY-MM-DD).
+        to_date (str): End date for the query (YYYY-MM-DD).
+        orbit_type (str): Orbit file type ('POEORB' or 'RESORB').
+
+    Returns:
+        list: List of orbit file features matching the criteria.
+
+    Scope:
+        Use in workflows needing filtered Sentinel-1 AUX orbit files for further processing or downloading. 
+        Only files matching the type and date range are returned.
+    """
+    
     orbit_files = query_features(
         "Sentinel1",
         {
@@ -62,8 +108,24 @@ def query_orbit_files(from_date, to_date, orbit_type):
     return orbit_files
 
 def download_orbit_files(orbit_files, orbit_type):
+    """
+    Download Sentinel-1 AUX orbit files to a local folder based on orbit type.
+
+    Args:
+        orbit_files (list): List of orbit file features to download.
+        orbit_type (str): Orbit file type ('POEORB' or 'RESORB').
+
+    Returns:
+        None
+
+    Scope:
+        Saves orbit files to './orbits/POEORB' or './orbits/RESORB' depending on orbit type. 
+        Intended for use after querying orbit files for batch downloading. 
+        Handles folder creation and concurrent downloads.
+    """
     
-    # Download orbit files to local folder "./orbits/POEORB" or "./orbits/RESORB"
+    print(f"Downloading {orbit_type} orbit files ({len(orbit_files)})\n")
+        
     out_folder = os.path.join(os.path.curdir, "./orbits/" + orbit_type)
     os.makedirs(out_folder, exist_ok=True)
 
@@ -81,23 +143,20 @@ def download_orbit_files(orbit_files, orbit_type):
 def main():
     
     from_date = "2026-01-01"
-    to_date = "2026-01-11" 
-    # to_date = date.today()
-
-    ## Load area of interest (AOI) from GeoJSON file
+    to_date = "2026-01-31"
+    # to_date = date.today().strftime("%Y-%m-%d")
+    
+    # Load area of interest (AOI) from GeoJSON file
     with open("./aoi.json") as f:
         aoi_data = json.load(f)
         
     aoi = shape(aoi_data).wkt
         
-    ## Query and download Sentinel-1 orbit files
-    # POEORB / RESORB
-    
+    # Query and download Sentinel-1 orbit files (POEORB / RESORB)
     orbit_files = query_orbit_files(from_date, to_date, "POEORB")    
     download_orbit_files(orbit_files, "POEORB")
     
-    ## Query and download Sentinel-1 products
-    
+    # Query and download Sentinel-1 products
     for orbit_direction in ["ASCENDING", "DESCENDING"]:
         products = query_products(from_date, to_date, orbit_direction, aoi)
         download_products(products, orbit_direction)
