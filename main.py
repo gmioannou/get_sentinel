@@ -1,11 +1,21 @@
 
 import os.path
 import json
+import logging
+
 from cdsetool.query import query_features
 from cdsetool.download import download_features
 from cdsetool.monitor import StatusMonitor
 from shapely.geometry import shape
 from datetime import date
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    filename="get_sentinel.log",
+    filemode="a"
+)
 
 def query_products(from_date, to_date, orbit_direction, aoi):
     """
@@ -62,21 +72,22 @@ def download_products(products, orbit_direction):
         Handles folder creation and concurrent downloads.
     """
     
-    print(f"Downloading {orbit_direction} products ({len(products)})\n")
-    
     out_folder = os.path.join(os.path.curdir, "./products/" + orbit_direction)    
     os.makedirs(out_folder, exist_ok=True)
     
-    list(
-        download_features(
-            products,
-            out_folder,
-            {
-                "concurrency": 4,
-                "monitor": StatusMonitor(),
-            },
-        )
+
+    downloads = download_features(
+        products,
+        out_folder,
+        {
+            "concurrency": 4,
+            "monitor": StatusMonitor(),
+        },
     )
+    
+    logging.info(f"Download {orbit_direction} products ({len(products)})")
+    for id in downloads:
+        logging.info(f"{id}")
     
 def query_orbit_files(from_date, to_date, orbit_type):
     """
@@ -123,33 +134,32 @@ def download_orbit_files(orbit_files, orbit_type):
         Intended for use after querying orbit files for batch downloading. 
         Handles folder creation and concurrent downloads.
     """
-    
-    print(f"Downloading {orbit_type} orbit files ({len(orbit_files)})\n")
-        
+
     out_folder = os.path.join(os.path.curdir, "./orbits/" + orbit_type)
     os.makedirs(out_folder, exist_ok=True)
 
-    list(
-        download_features(
-            orbit_files,
-            out_folder,
-            {
-                "concurrency": 4,
-                "monitor": StatusMonitor(),
-            },
-        )
+    downloads = download_features(
+        orbit_files,
+        out_folder,
+        {
+            "concurrency": 4,
+            "monitor": StatusMonitor(),
+        },
     )
+    
+    logging.info(f"Download {orbit_type} orbit files ({len(orbit_files)})")
+    for id in downloads:
+        logging.info(f"{id}")
     
 def main():
     
     from_date = "2026-01-01"
-    to_date = "2026-01-31"
-    # to_date = date.today().strftime("%Y-%m-%d")
+    # to_date = "2026-01-07"
+    to_date = date.today().strftime("%Y-%m-%d")
     
     # Load area of interest (AOI) from GeoJSON file
     with open("./aoi.json") as f:
         aoi_data = json.load(f)
-        
     aoi = shape(aoi_data).wkt
         
     # Query and download Sentinel-1 orbit files (POEORB / RESORB)
@@ -160,7 +170,7 @@ def main():
     for orbit_direction in ["ASCENDING", "DESCENDING"]:
         products = query_products(from_date, to_date, orbit_direction, aoi)
         download_products(products, orbit_direction)
-
+    
 if __name__ == "__main__":
     main()
     
