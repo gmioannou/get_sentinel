@@ -1,21 +1,21 @@
 # get_sentinel
 
-## create mamba virtual environment
+## to create mamba virtual environment
 
-mamba create -n <env_name> python=3.12
+mamba create -n sentinelenv python=3.12
 
-## activate mamba virtual environment
+## to activate mamba virtual environment
 
-mamba activate <env_name>
+mamba activate sentinelenv
 
-## remove mamba virtual environment
+## to install cdsetool
 
-mamba env remove -n <env_name>
+mamba install cdsetool==0.2.13
 
-## list mamba virtual environments
+## to list mamba virtual environments
 
 mamba env list
 
-## install cdsetool
+## to remove mamba virtual environment
 
-mamba install cdsetool==0.2.13
+mamba env remove -n sentinelenv
